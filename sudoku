@@ -1,0 +1,189 @@
+// You can edit this code!
+// Click here and start typing.
+package main
+
+import (
+	"fmt"
+)
+
+const N = 9
+
+// Sudoku tahtasını ekrana yazdırıyoruz
+func SudokuYaz(sudoku [N][N]int) {
+	for i := 0; i < N; i++ {
+		for j := 0; j < N; j++ {
+			fmt.Printf("%d ", sudoku[i][j])
+		}
+		fmt.Println()
+	}
+}
+
+// Belirli bir sayının belirli bir pozisyona yerleştirilebilir olup olmadığını kontrol ediyoruz
+func GecerliSudoku(sudoku [N][N]int, row, col, deger int) bool {
+
+	// Satır ve sütun kontrolü
+	for i := 0; i < N; i++ {
+		if sudoku[i][col] == deger || sudoku[row][i] == deger {
+			return false
+		}
+	}
+
+	// 3x3 alt blok kontrolü
+	ilkSatır := row - row%3 // başlangıç değerini 0-3-6 ya getiriyor
+	ilkSutun := col - col%3
+	for i := 0; i < 3; i++ {
+		for j := 0; j < 3; j++ {
+			if sudoku[ilkSatır+i][ilkSutun+j] == deger {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// Sudoku çözme fonksiyonu
+func SudokuÇöz(sudoku *[N][N]int) bool {
+	row := -1
+	col := -1
+	empty := false
+
+	// Boş hücreyi buluyoruz önce
+	for i := 0; i < N; i++ {
+		for j := 0; j < N; j++ {
+			if sudoku[i][j] == 0 {
+				row = i
+				col = j
+				empty = true
+				break
+			}
+		}
+		if empty {
+			break
+		}
+	}
+
+	// Eğer boş hücre yoksa Sudoku çözülmüştür
+	if !empty {
+		return true
+	}
+
+	// 1'den 9'a kadar sayıları deneyerek çözüm arıyoruz
+	for deger := 1; deger <= 9; deger++ {
+		if GecerliSudoku(*sudoku, row, col, deger) {
+			sudoku[row][col] = deger // Geçici olarak yerleştir
+
+			if SudokuÇöz(sudoku) { // Geri çağırma yapıyoruz
+				return true
+			}
+
+			sudoku[row][col] = 0 // Geri alıyoruz (backtracking)
+		}
+	}
+	return false
+}
+
+func GirdiKontrol(sudoku [N][N]int) bool {
+	for i := 0; i < N; i++ {
+		for j := 0; j < N; j++ {
+			if sudoku[i][j] != 0 {
+				deger := sudoku[i][j]
+				// Sudoku kurallarında olduğu gibi sayıyı geçici olarak çıkararak kontrol ediyoruz
+				sudoku[i][j] = 0 // Geçici olarak kaldırdık
+				if !GecerliSudoku(sudoku, i, j, deger) {
+					//fmt.Printf("Geçersiz sayı bulundu: satır %d, sütun %d, değer: %d\n", i+1, j+1, deger)
+					sudoku[i][j] = deger // Eski haline getirdik
+					return false
+				}
+				sudoku[i][j] = deger // Sayıyı eski haline getirdik
+			}
+		}
+	}
+	return true
+}
+
+func DiziyeDönüştür(girdiSudoku []string) ([N][N]int, bool) {
+	var sudoku [N][N]int
+
+	if len(girdiSudoku) != N {
+		fmt.Println("Error")
+		return sudoku, false // Boş sudoku ve hata durumu döndürür
+	}
+
+	for i := 0; i < N; i++ {
+		if len(girdiSudoku[i]) != N {
+			fmt.Println("Error")
+			return sudoku, false
+		}
+	}
+
+	// Nokta (.) karakterlerini sıfır (0) ile değiştiriyoruz
+	for i := 0; i < N; i++ {
+		for j := 0; j < N; j++ {
+			if girdiSudoku[i][j] == '.' {
+				sudoku[i][j] = 0
+			} else {
+				var num int
+				fmt.Sscanf(string(girdiSudoku[i][j]), "%d", &num)
+				sudoku[i][j] = num
+			}
+		}
+	}
+	return sudoku, true
+
+	
+}
+
+func main() {
+
+	// Girdi alınırken nokta kullanılarak boş hücreleri sıfırla dolduruyoruz
+	/* sudoku := [N]string{
+		"935..7..8",
+		"...3.8.7.",
+		"6..5..49.",
+		".73..4...",
+		"4..175.8.",
+		".618..247",
+		".187.....",
+		"..6.8.75.",
+		"75.4.3862",
+	}*/
+
+	/*sudoku := [N]string{
+		".932..8.",
+		"27.3.85..",
+		".8.73.254",
+		"9758...31",
+		"....74.6.",
+		"6.45.38.7",
+		"7....2.48",
+		"32.4...7.",
+		"..8.579..",
+	}*/
+
+	/*sudoku := [N]string{
+		"not",
+		"a",
+		"sudoku",
+	}*/
+	
+		
+
+	
+
+	intSudoku, valid := DiziyeDönüştür(sudoku[:]) // string ve integer olarak karışık verilen sudoku tahtasını integer türüne çevirip kontrolleri sağlıyoruz
+
+	// Eğer dönüşüm geçersizse programı durdur
+	if !valid {
+		return
+	}
+
+	if !GirdiKontrol(intSudoku) { //girdi verdiğimiz tahtada satır sütunda tekrar edenler var mı bakıyoruz, geçerlisudoku fonksiyonu ile girdideki her bir değeri gönderiyoruz ve kontrol sağlıyoruz
+		fmt.Println("Error")
+
+	} else if SudokuÇöz(&intSudoku) {
+		fmt.Println("Çözüldü")
+		SudokuYaz(intSudoku)
+	} else {
+		fmt.Println("Error.")
+	}
+}
